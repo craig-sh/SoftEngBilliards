@@ -1,0 +1,2 @@
+7.24- 7.55 Creating ball class
+8.05 - 855 Thinking about collision(70%)/Coding Collsion(30%)
