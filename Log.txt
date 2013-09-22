@@ -1,2 +1,9 @@
-7.24- 7.55 Creating ball class
-8.05 - 855 Thinking about collision(70%)/Coding Collsion(30%)
+19 Sep
+	19.24 - 19.55 Creating ball class
+	20.05 - 20.55 Thinking about collision(70%)/Coding Collsion(30%)
+21 Sep
+	08.35 - 09.15 Planning wall collision
+	08.15 - 10.00 Coding / TEsting wall collision
+	14.15 - 15.20 Thinking about ball -> ball collision
+	15.30 - 18.00 Coding/testing ball -> ball collision 
+	18.00 -	19.10 			Implementing overall tests
