@@ -77,13 +77,23 @@ def remove_collision(ball1,ball2)
   ball2.collision = nil
 end
 def sim_collision_with(ball1,ball2)
+    
     #calculate
     magnitude_normal = ball1.abs_dis(ball2)
     x_normal = (ball1.x_pos - ball2.x_pos)/(magnitude_normal)
     y_normal = (ball1.y_pos - ball2.y_pos)/(magnitude_normal)
 
-    x_tangent =  -1 * y_normal
-    y_tangent =  x_normal
+    #if ball1.x_pos> ball2.x_pos && ball1.y_pos > ball2.y_pos
+     # puts "#{ball1.colour} hitting #{ball2.colour} in 1"
+      x_tangent =  -1 * y_normal
+      y_tangent =  x_normal
+    #else
+    #  puts "#{ball1.colour} hitting #{ball2.colour} in 2"
+     # x_tangent =  y_normal
+     # y_tangent =  -1 * x_normal
+    #end
+    puts ball1
+    puts ball2
 
     ball1_normal_x_speed = x_normal * ball1.x_speed
     ball1_normal_y_speed = y_normal * ball1.y_speed
@@ -138,10 +148,14 @@ balls = []
 collision_array = []
 #balls << Ball.new("Violet" , 250, 0 , 0 ,5) 
 #balls << Ball.new("blue"  , 5, 10  , VELOCITY/7  ,-2)
-balls << Ball.new("red"   , 250, 400 , 0  , 0)
-balls << Ball.new("pink"  , 75,  200  , VELOCITY/2  ,-3) 
-balls << Ball.new("yellow", 150, 550  , VELOCITY/4  ,-2)
-balls << Ball.new("black" , 200, 150  , 0           ,5)
+
+#balls << Ball.new("red"   , 250, 400 , 0  , 0)
+#balls << Ball.new("pink"  , 75,  200  , VELOCITY/2  ,-3) 
+#balls << Ball.new("yellow", 150, 550  , VELOCITY/4  ,-2)
+#balls << Ball.new("black" , 200, 150  , 0           ,5)
+
+balls << Ball.new("pink",100,280,-2.5,3)
+balls << Ball.new("yellow",100,329,-1.16,-3.8)
 
 #NUM_BALLS.times do |x|
 #  color_num = rand(color_array.length - 1)
