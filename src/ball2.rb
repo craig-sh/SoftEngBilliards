@@ -8,9 +8,8 @@ WIDTH = 300
 BALL_RADIUS = 20
 VELOCITY = 5.0
 NUM_BALLS = 20
-SLOWDOWN = 0.999
+SLOWDOWN = 0.01
 full = true 
-#SLOWDOWN = 1
 color_array = ["red","blue","cyan","pink","Silver","Gray","Crimson","Navy","Azure","Lime","Gold","Brown","Teal","Purple","YeLlow"]
 
 class Ball
@@ -26,8 +25,8 @@ class Ball
 
   def move
     #Apply decrease in speed due to friction    
-    @x_speed *= SLOWDOWN
-    @y_speed *= SLOWDOWN
+    @x_speed -= SLOWDOWN * STEP * @x_speed
+    @y_speed -= SLOWDOWN * STEP * @y_speed
 
     #move the ball into its new postion
     @x_pos += @x_speed * STEP 
@@ -44,8 +43,11 @@ class Ball
     (((@x_pos - ball.x_pos )** 2)  + ((@y_pos - ball.y_pos )** 2))** 0.5
   end
 
+  #funtion for printing out each ball. Each number is rounded, converted into a string
+  #and left justified for readability
   def to_s
-      "#{@colour} = #{@x_pos},#{@y_pos} at #{@x_speed},#{@y_speed}"
+      "#{@colour.ljust(10,' ')} #{@x_pos.round(2).to_s.ljust(6,' ')} #{@y_pos.round(2).to_s.ljust(6,' ')} \
+#{@x_speed.round(2).to_s.ljust(6,' ')} #{@y_speed.round(2).to_s.ljust(6,' ')}"
   end
 end
 #################DRAWING###################
@@ -152,46 +154,16 @@ def detect_ball_collision(ball1,ball2)
   end
 end
 #################################################
+###############MAIN PROGRAM######################
 #Setup ball array
 balls = []
 File.open(ARGV[0],"r").each do |line|
   args = line.split(" ")
   balls << Ball.new(args[0],args[1].to_f,args[2].to_f,args[3].to_f,args[4].to_f)
 end
-#balls << Ball.new("Violet" , 250, 0 , 0 ,5) 
-#balls << Ball.new("blue"  , 5, 10  , VELOCITY/7  ,-2)
-
-#balls << Ball.new("red"   , 250, 400 , 0  , 0)
-#balls << Ball.new("pink"  , 75,  200  , VELOCITY/2  ,-3) 
-#balls << Ball.new("yellow", 150, 550  , VELOCITY/4  ,-2)
-#balls << Ball.new("black" , 200, 150  , 0           ,5)
-
-#balls << Ball.new("pink",100,280,-2.5,3)
-#balls << Ball.new("yellow",100,329,-1.16,-3.8)
-
-# one ball in middle, two balls hit it from wither side
-#balls << Ball.new("red",225,50,-2,0)
-#balls << Ball.new("blue",25,50,2,0)
-#balls << Ball.new("black",125,50,0,0)
-
-
-
-
-#one white ball hitting 3 balls in triagle formation
-#balls << Ball.new("red",WIDTH/2,LENGTH/2,0,0)
-#balls << Ball.new("blue",WIDTH/2 + BALL_RADIUS*2 -0.1,LENGTH/2 - BALL_RADIUS*2 ,0,0)
-#balls << Ball.new("black",WIDTH/2 - BALL_RADIUS*2 +0.1,LENGTH/2 - BALL_RADIUS*2,0,0)
-#balls << Ball.new("white",WIDTH/2, LENGTH - BALL_RADIUS,0,-3)
-
-#NUM_BALLS.times do |x|
-#  color_num = rand(color_array.length - 1)
-#  balls << Ball.new("red",rand(WIDTH),rand(LENGTH),VELOCITY * rand ,rand * Math::PI)  
-#  color_array.slice!(color_num)
-#end
 
 #Create the object that draws balls to screen
 drawer = Drawer.new
-
 
 #Main Loop
 initial = true
@@ -220,13 +192,13 @@ balls.each do |ball|
 end
 ###################################################################
 #puts "DONEEE"
-@event_queue = Rubygame::EventQueue.new
-# Use new style events so that this software will work with Rubygame 3.0
-@event_queue.enable_new_style_events
-while event = @event_queue.wait
-  # Stop this program if the user closes the window
-  break if event.is_a? Rubygame::Events::QuitRequested
-end
+#@event_queue = Rubygame::EventQueue.new
+## Use new style events so that this software will work with Rubygame 3.0
+#@event_queue.enable_new_style_events
+#while event = @event_queue.wait
+#  # Stop this program if the user closes the window
+#  break if event.is_a? Rubygame::Events::QuitRequested
+#end
 
 
  
