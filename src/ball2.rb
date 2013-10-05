@@ -1,15 +1,10 @@
 require 'rubygems'
 require 'rubygame'
 
-#STEP = 0.4
 STEP = 0.05
-LENGTH = 600
-WIDTH = 300
 BALL_RADIUS = 20
-VELOCITY = 5.0
-NUM_BALLS = 20
 SLOWDOWN = 0.01
-full = true 
+full = false 
 color_array = ["red","blue","cyan","pink","Silver","Gray","Crimson","Navy","Azure","Lime","Gold","Brown","Teal","Purple","YeLlow"]
 
 class Ball
@@ -59,35 +54,23 @@ class Drawer
     @screen = Rubygame::Screen.open [ WIDTH, LENGTH], 0, Rubygame::DOUBLEBUF
     default_depth = 0
   end
+  #Loop through each ball and and draw them to screen
   def draw(balls)
     @screen.fill(Rubygame::Color[:green])
     balls.each do |ball|
       center = [ball.x_pos,ball.y_pos]
       radius = BALL_RADIUS
-      color = eval "Rubygame::Color[:#{ball.colour}]" #[ 0xc0, 0x80, 0x40]      
+      color = eval "Rubygame::Color[:#{ball.colour}]"     
       @screen.draw_circle_s  center, radius, color
     end
-    #sleep(WAIT)
     @screen.flip
   end
 end
 #################################################
 #################FUNCTIONS################################
 def add_collision(ball1,ball2)
-  remove_collision1(ball1)
-  remove_collision1(ball2)
   ball1.collision = ball2
   ball2.collision = ball1
-end
-def remove_collision(ball1,ball2)
-  ball1.collision = nil
-  ball2.collision = nil
-end
-def remove_collision1(ball)
-  if ball != nil &&  ball.collision != nil
-    ball.collision.collision = nil
-  end
-  ball.collision = nil
 end
 def sim_collision_with(ball1,ball2)
     #calculat the normal unit vectors
@@ -102,11 +85,11 @@ def sim_collision_with(ball1,ball2)
 
     #calculate the speed in the direction of the normal for each ball
     #Ball1 uses ball2's initial speeds and vice versa because
-    #we assume perfectly elastic collisions
+    #we assume perfectly elastic collisions (ball dot normal)
     ball1_normal =  x_normal * ball2.x_speed + y_normal * ball2.y_speed
     ball2_normal =  x_normal * ball1.x_speed +  y_normal * ball1.y_speed
 
-    #calculate the speed in the direction of the tangent for each ball
+    #calculate the speed in the direction of the tangent for each ball (ball dot tangent)
     ball1_tangent =  x_tangent * ball1.x_speed + y_tangent * ball1.y_speed
     ball2_tangent =  x_tangent * ball2.x_speed + y_tangent * ball2.y_speed
 
@@ -127,37 +110,42 @@ def detect_wall_collision(ball)
   if ((ball.x_pos - BALL_RADIUS) <= 0  && ball.x_speed < 0 ) || 
      ((ball.x_pos + BALL_RADIUS) >= WIDTH && ball.x_speed > 0)
      ball.x_speed = ball.x_speed * -1
-     remove_collision1(ball)
+     ball.collision = nil
   end
   if ((ball.y_pos - BALL_RADIUS) <= 0 && ball.y_speed < 0) || 
     ((ball.y_pos + BALL_RADIUS) >= LENGTH && ball.y_speed > 0)
     ball.y_speed = ball.y_speed * -1
-    remove_collision1(ball)
+    ball.collision = nil
   end
 end
 
 def detect_ball_collision(ball1,ball2)
   #check if ball 1 is overlapping with ball2
   if (ball1.abs_dis(ball2) <= 2 * BALL_RADIUS )
-    #make sure that we are not double counting a collision
-    #puts ball1.collision
-    #puts ball2.collision      
+    #make sure that we are not double counting a collision    
     if(ball1.collision != ball2 || ball2.collision != ball1)
-
-      add_collision(ball1,ball2)
+      ball1.collision = ball2
+      ball2.collision = ball1
       sim_collision_with(ball1,ball2)
     end
     #if the recently came out of a collision and are no longer
     #overlapping, remove their refrence to the collsion
-  elsif ball1.collision == ball2 || ball2.collision == ball1
-    remove_collision(ball1,ball2)
+  elsif ball1.collision == ball2 
+    ball1.collision = nil
   end
 end
 #################################################
 ###############MAIN PROGRAM######################
-#Setup ball array
+#Initialize the ball array,which all the created balls
+#will be stored in
 balls = []
-File.open(ARGV[0],"r").each do |line|
+in_file = File.open(ARGV[0],"r")
+#read the first line to get the length and width
+args = in_file.readline.split(" ")
+LENGTH = args[0].to_i
+WIDTH = args[1].to_i
+#read in the rest of the arguments to create all the balls
+in_file.each do |line,num_line|
   args = line.split(" ")
   balls << Ball.new(args[0],args[1].to_f,args[2].to_f,args[3].to_f,args[4].to_f)
 end
@@ -186,19 +174,23 @@ while(run)
   drawer.draw(balls) if initial||full
   initial = false
 end
-#Once all balls have ceased to move, print them out and exit
+
+#create/overwite an output file with the same name as the input file
+#but with the '.out' extension
+out_file_name = (ARGV[0].split("."))[0] + ".out"
+out_file  = File.open(out_file_name,"w")
 balls.each do |ball|
-  puts ball
+  out_file.write("#{ball}\n")
 end
 ###################################################################
-#puts "DONEEE"
-#@event_queue = Rubygame::EventQueue.new
-## Use new style events so that this software will work with Rubygame 3.0
-#@event_queue.enable_new_style_events
-#while event = @event_queue.wait
-#  # Stop this program if the user closes the window
-#  break if event.is_a? Rubygame::Events::QuitRequested
-#end
+puts "DONEEE"
+@event_queue = Rubygame::EventQueue.new
+# Use new style events so that this software will work with Rubygame 3.0
+@event_queue.enable_new_style_events
+while event = @event_queue.wait
+  # Stop this program if the user closes the window
+  break if event.is_a? Rubygame::Events::QuitRequested
+end
 
 
  
