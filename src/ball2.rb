@@ -4,20 +4,25 @@ require 'rubygame'
 STEP = 0.05
 BALL_RADIUS = 20
 SLOWDOWN = 0.01
-full = false 
-color_array = ["red","blue","cyan","pink","Silver","Gray","Crimson","Navy","Azure","Lime","Gold","Brown","Teal","Purple","YeLlow"]
+full = true 
+$middle = 20
 
+#Each ball has it cordinates and the speed along the x,y axis
 class Ball
-  attr_accessor :colour,:x_pos,:y_pos,:x_speed,:y_speed,:collision
+  #the collision variable is not initialzed, it is only set
+  #to point to the ball that it has most recently collided with
+  attr_accessor :name,:x_pos,:y_pos,:x_speed,:y_speed,:collision
 
-  def initialize(colour,x_pos,y_pos,x_speed,y_speed)
-    @colour = colour
+  def initialize(name,x_pos,y_pos,x_speed,y_speed)
+    @name = name
     @x_pos = x_pos
     @y_pos = y_pos
     @x_speed = x_speed
     @y_speed = y_speed
   end
 
+#moves the balls by its current x,yspeed
+#accounts for changes in how small the 'STEP' is
   def move
     #Apply decrease in speed due to friction    
     @x_speed -= SLOWDOWN * STEP * @x_speed
@@ -41,8 +46,7 @@ class Ball
   #funtion for printing out each ball. Each number is rounded, converted into a string
   #and left justified for readability
   def to_s
-      "#{@colour.ljust(10,' ')} #{@x_pos.round(2).to_s.ljust(6,' ')} #{@y_pos.round(2).to_s.ljust(6,' ')} \
-#{@x_speed.round(2).to_s.ljust(6,' ')} #{@y_speed.round(2).to_s.ljust(6,' ')}"
+      "#{@name.ljust(10,' ')} #{@x_pos.round(2).to_s.ljust(6,' ')} #{@y_pos.round(2).to_s.ljust(6,' ')} #{@x_speed.round(2).to_s.ljust(6,' ')} #{@y_speed.round(2).to_s.ljust(6,' ')}"
   end
 end
 #################DRAWING###################
@@ -60,7 +64,7 @@ class Drawer
     balls.each do |ball|
       center = [ball.x_pos,ball.y_pos]
       radius = BALL_RADIUS
-      color = eval "Rubygame::Color[:#{ball.colour}]"     
+      color = eval "Rubygame::Color[:#{ball.name}]"     
       @screen.draw_circle_s  center, radius, color
     end
     @screen.flip
@@ -68,10 +72,6 @@ class Drawer
 end
 #################################################
 #################FUNCTIONS################################
-def add_collision(ball1,ball2)
-  ball1.collision = ball2
-  ball2.collision = ball1
-end
 def sim_collision_with(ball1,ball2)
     #calculat the normal unit vectors
     magnitude_normal = ball1.abs_dis(ball2)
@@ -106,7 +106,6 @@ def detect_wall_collision(ball)
   #is travelling in the direction that will take it futher out of bounds.
   #The latter is checked so that only one wall collision is detected for 
   #a slow moving ball
-
   if ((ball.x_pos - BALL_RADIUS) <= 0  && ball.x_speed < 0 ) || 
      ((ball.x_pos + BALL_RADIUS) >= WIDTH && ball.x_speed > 0)
      ball.x_speed = ball.x_speed * -1
@@ -119,14 +118,18 @@ def detect_wall_collision(ball)
   end
 end
 
+#Checks if a collsion exists between two balls 
+#that hasn't already been accounted for
 def detect_ball_collision(ball1,ball2)
   #check if ball 1 is overlapping with ball2
-  if (ball1.abs_dis(ball2) <= 2 * BALL_RADIUS )
-    #make sure that we are not double counting a collision    
+  if (ball1.abs_dis(ball2) < 2 * BALL_RADIUS )
+    #make sure that we are not double counting a collision by
+    #remembering who we collided with in the collided field    
     if(ball1.collision != ball2 || ball2.collision != ball1)
       ball1.collision = ball2
       ball2.collision = ball1
       sim_collision_with(ball1,ball2)
+      $middle = $middle + 1
     end
     #if the recently came out of a collision and are no longer
     #overlapping, remove their refrence to the collsion
@@ -134,27 +137,67 @@ def detect_ball_collision(ball1,ball2)
     ball1.collision = nil
   end
 end
+##############ERROR Checking Funtions##########
+def check_int(test_string,arg)
+  abort "Error: #{arg} :#{test_string} must be an integer" unless test_string.match(/^\d+$/)
+end
+def check_float(test_string,arg)
+  abort "Error: #{arg} : #{test_string} must be a float" unless test_string.match(/^[+-]?\d*.?\d*$/)
+end
+##########################
+
 #################################################
 ###############MAIN PROGRAM######################
 #Initialize the ball array,which all the created balls
 #will be stored in
 balls = []
+#Raise an error if the input file doesn't end in .in
+abort "Error :Incorrect name for input file, files must have extension .in" unless ARGV[0].match(/\.in$/)
 in_file = File.open(ARGV[0],"r")
 #read the first line to get the length and width
 args = in_file.readline.split(" ")
+check_int(args[0],"Length")
+check_int(args[1],"Width")
 LENGTH = args[0].to_i
 WIDTH = args[1].to_i
-#read in the rest of the arguments to create all the balls
-in_file.each do |line,num_line|
-  args = line.split(" ")
-  balls << Ball.new(args[0],args[1].to_f,args[2].to_f,args[3].to_f,args[4].to_f)
-end
 
+#read in the rest of the arguments to create all the balls
+line_num = 1
+in_file.each do |line|
+  args = line.split(" ")
+  abort "Error: Too many arguments on line number #{line_num} of input file" unless args[5] == nil
+  name = args.shift
+  abort "Error: Name: #{name} is too long" unless name.length < 15
+  #make sure all parameters are valid floats
+  args.each {|arg| check_float(arg,"Ball parameter")} 
+  #convert all arguments into floats
+  x_pos = args[0].to_f
+  y_pos = args[1].to_f
+  x_speed = args[2].to_f
+  y_speed = args[3].to_f
+
+  #Make sure the ball is within the speed limits and table
+  abort "Error: X coordinate on line #{line_num} is out of bounds" unless (x_pos + BALL_RADIUS) <= WIDTH and (x_pos - BALL_RADIUS) >= 0
+  abort "Error: Y coordinate on line #{line_num} is out of bounds" unless (y_pos + BALL_RADIUS) <= LENGTH and (y_pos - BALL_RADIUS) >= 0 
+  abort "Error: X Speed on line #{line_num} is too fast" unless x_speed.abs <= 20
+  abort "Error: Y Speed on line #{line_num} is too fast" unless y_speed.abs <= 20
+  #Initialize the ball
+  balls << Ball.new(name,x_pos,y_pos,x_speed,y_speed)
+  line_num += 1
+end
+#make sure no balls are overlapping in starting positions
+for i in 0...balls.length 
+  for j in (i+1)...balls.length #
+      abort "Error: #{balls[i].name} and #{balls[j].name} are overlapping in initial positions" unless balls[i].abs_dis(balls[j]) >= 2 * BALL_RADIUS
+  end
+end
+#close the input file as we do not need it anymore
+in_file.close
 #Create the object that draws balls to screen
 drawer = Drawer.new
-
-#Main Loop
-initial = true
+##################################################################
+###################################Main Loop#####################
+initial = false
 run = true
 while(run)
   #set run to false as it it will become true if any ball is still moving
@@ -170,17 +213,17 @@ while(run)
     #continue to run simulation  if the ball is still moving
     run = true if balls[i].x_speed != 0 || balls[i].y_speed !=0
   end
-  #draw the balls to the screen to help with debug
-  drawer.draw(balls) if initial||full
+  #draw the balls to the screen to help with debuging
+  drawer.draw(balls) if initial||full||$middle < 1
   initial = false
 end
 
 #create/overwite an output file with the same name as the input file
 #but with the '.out' extension
-out_file_name = (ARGV[0].split("."))[0] + ".out"
+out_file_name = ARGV[0].gsub(/\.in$/,".out")
 out_file  = File.open(out_file_name,"w")
 balls.each do |ball|
-  out_file.write("#{ball}\n")
+  out_file.puts ball
 end
 ###################################################################
 puts "DONEEE"
@@ -191,9 +234,3 @@ while event = @event_queue.wait
   # Stop this program if the user closes the window
   break if event.is_a? Rubygame::Events::QuitRequested
 end
-
-
- 
-
-
-
