@@ -4,8 +4,6 @@ require 'rubygame'
 STEP = 0.05
 BALL_RADIUS = 20
 SLOWDOWN = 0.01
-full = true 
-$middle = 20
 
 #Each ball has it cordinates and the speed along the x,y axis
 class Ball
@@ -22,7 +20,7 @@ class Ball
   end
 
 #moves the balls by its current x,yspeed
-#accounts for changes in how small the 'STEP' is
+#reduces actual displacement by a factor of STEP
   def move
     #Apply decrease in speed due to friction    
     @x_speed -= SLOWDOWN * STEP * @x_speed
@@ -50,28 +48,35 @@ class Ball
   end
 end
 #################DRAWING###################
+#This class is made specifically to draw balls to the screen
 class Drawer
   attr_accessor :screen
+  #Creates a canvas of LENGHT X WIDTH 
   def initialize()
-      # Open a double-buffered, video-RAM-based window in full-screen mode at the
-    # maximum resolution
     @screen = Rubygame::Screen.open [ WIDTH, LENGTH], 0, Rubygame::DOUBLEBUF
     default_depth = 0
   end
-  #Loop through each ball and and draw them to screen
+  #Loops through each ball and and draws them to screen
   def draw(balls)
+    #fill the screen with greeen to clear all balls from the previous cycle
     @screen.fill(Rubygame::Color[:green])
     balls.each do |ball|
       center = [ball.x_pos,ball.y_pos]
       radius = BALL_RADIUS
-      color = eval "Rubygame::Color[:#{ball.name}]"     
+      begin #try to assign a color to the ball based on name
+        color = eval "Rubygame::Color[:#{ball.name}]"     
+      rescue  #if its not a valid color just make it red
+        color =  Rubygame::Color[:red]
+      end
       @screen.draw_circle_s  center, radius, color
     end
     @screen.flip
   end
 end
 #################################################
-#################FUNCTIONS################################
+#################COLLISION FUNCTIONS################################
+#Performs vector math to ficure out where each of two balls
+#will head after a collsion, and sets their x,y speeds accordingly
 def sim_collision_with(ball1,ball2)
     #calculat the normal unit vectors
     magnitude_normal = ball1.abs_dis(ball2)
@@ -129,7 +134,6 @@ def detect_ball_collision(ball1,ball2)
       ball1.collision = ball2
       ball2.collision = ball1
       sim_collision_with(ball1,ball2)
-      $middle = $middle + 1
     end
     #if the recently came out of a collision and are no longer
     #overlapping, remove their refrence to the collsion
@@ -144,10 +148,10 @@ end
 def check_float(test_string,arg)
   abort "Error: #{arg} : #{test_string} must be a float" unless test_string.match(/^[+-]?\d*.?\d*$/)
 end
-##########################
+#############################################
 
 #################################################
-###############MAIN PROGRAM######################
+###############Initilization and Input parsing####
 #Initialize the ball array,which all the created balls
 #will be stored in
 balls = []
@@ -195,10 +199,9 @@ end
 in_file.close
 #Create the object that draws balls to screen
 drawer = Drawer.new
-##################################################################
-###################################Main Loop#####################
-initial = false
+
 run = true
+###################################Main Loop#####################
 while(run)
   #set run to false as it it will become true if any ball is still moving
   run = false
@@ -213,24 +216,16 @@ while(run)
     #continue to run simulation  if the ball is still moving
     run = true if balls[i].x_speed != 0 || balls[i].y_speed !=0
   end
-  #draw the balls to the screen to help with debuging
-  drawer.draw(balls) if initial||full||$middle < 1
-  initial = false
+  #draw the balls to the screen 
+  drawer.draw(balls) 
 end
-
 #create/overwite an output file with the same name as the input file
 #but with the '.out' extension
 out_file_name = ARGV[0].gsub(/\.in$/,".out")
 out_file  = File.open(out_file_name,"w")
+#print the balls to the screen
 balls.each do |ball|
   out_file.puts ball
 end
+out_file.close
 ###################################################################
-puts "DONEEE"
-@event_queue = Rubygame::EventQueue.new
-# Use new style events so that this software will work with Rubygame 3.0
-@event_queue.enable_new_style_events
-while event = @event_queue.wait
-  # Stop this program if the user closes the window
-  break if event.is_a? Rubygame::Events::QuitRequested
-end
